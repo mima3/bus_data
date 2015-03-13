@@ -1,0 +1,388 @@
+@charset "UTF-8";
+a:visited,
+a:link {
+  color: #362b55;
+}
+a:hover {
+  color: #3399cc;
+}
+a:focus {
+    outline: thin dotted #333;
+    outline: 5px auto -webkit-focus-ring-color;
+    outline-offset: -2px;
+}
+a:hover,
+a:active {
+    outline: 0;
+}
+
+img {
+  vertical-align: middle;
+}
+
+textarea {
+    vertical-align: top;
+    font-family: sans-serif;
+    font-size: 16px;
+}
+
+body {
+    font-family: "Helvetica Neue", Helvetica, Arial, sans-serif;
+    font-size: 13px;
+    line-height: 18px;
+    color: #402d16;
+    line-height: 150%;
+    background-color: #3b414d;
+}
+
+#contents  {
+  margin: 40px 10px;
+
+  padding: 10px 10px 40px;
+  background-color: #fff;
+}
+
+#contents h1  {   
+  font-size: 200%;
+  text-align: center;
+  border-bottom: solid 2px #CCC;
+  padding: 5px;
+  margin-bottom: 10px;
+}
+
+
+h1 {
+    text-align: center;
+    font-size: 200%;
+    margin-top: 5px;
+    margin-bottom: 0;
+}
+
+.btn {    
+    width: 120px;
+    text-align: center;
+    font-weight: bold;
+    font-size: 120%;
+    margin: 40px auto 20px auto;
+    padding: 7px 0;
+}
+.btn_small{
+    width: 120px;
+    text-align: right;
+    font-weight: bold;
+    font-size: 80%;
+    margin: 40px auto 20px auto;
+    padding: 7px 0;
+}
+.btn_big {
+    display: block;
+    width: 120px;
+    text-align: center;
+    font-weight: bold;
+    font-size: 120%;
+    margin: 40px auto 20px auto;
+    padding: 7px 0;
+}
+
+table.normal{
+    border-top:1px solid #663300;
+    border-left:1px solid #663300;
+    border-collapse:collapse;
+    border-spacing:0;
+    background-color:#ffffff;
+    empty-cells:show;
+}
+
+table.normal th{
+    border-right:1px solid #663300;
+    border-bottom:1px solid #663300;
+    color:#330000;
+    background-color:#996633;
+    background-position:left top;
+    padding:0.3em 1em;
+    text-align:center;
+}
+
+table.normal  td{
+    border-right:1px solid #663300;
+    border-bottom:1px solid #663300;
+    padding:0.3em 1em;
+}
+
+.number {
+    text-align: right;
+}
+
+td div.train {
+    border-top:1px solid #cccccc;
+    border-left:1px solid #cccccc;
+    border-right:1px solid #333300;
+    border-bottom:1px solid #333300;
+    padding: 2px 2px;
+}
+/**
+ * ltr言語用
+ */
+.rtl {
+  direction: rtl;
+  /*unicode-bidi:bidi-override;*/
+}
+/**
+ * Header情報
+ */
+#header {
+    /*position: fixed !important;*/  
+    position: absolute;  
+    top: 0;  
+    left: 0;  
+    width: 100%; 
+    border-bottom:3px solid #eee9da;
+    font-size: 100%;
+    background-color:#ffffff;
+    background-position:left top;
+    padding:5px 5px;
+    z-index: 99999;
+}
+
+#header div.headItem{
+  padding: 0 4px;
+  float:left;
+}
+
+#header div.rightItem{
+  padding: 0 4px;
+  float:left;
+}
+
+#header div *{
+  vertical-align: middle;
+}
+
+#header .btn_icon {
+   min-height: 28px;   line-height: 28px;
+}
+#header .btn_icon:hover {
+  background-color: #3399cc;
+}
+
+.submenuItem {
+  position:absolute;
+  top:30px;
+  z-index:99999;
+  background-color: #efefef;
+  border-right:1px solid #663300;
+  border-bottom:1px solid #663300;
+  background-position:left top;
+  display:none;
+}
+
+.submenuItem ul{
+  padding:0 5px 5px 5px;
+  zoom: 1;
+  list-style:none;
+}
+
+.submenuItem ul li{
+  float:none;
+  border-bottom:solid 1px #CCCCCC;
+  padding:5px 0 0 0;
+  margin:0 0 3px 0;
+}
+.submenuItem ul li:last-child{
+  border-bottom:none;
+}
+.submenuItem ul li a{
+  display:block;
+  float:none;
+}
+
+/**
+ * 電光掲示板
+ * http://creatorclip.info/2014/06/css3-electric-bulletin-board/
+ */
+/* =====================
+  電光掲示板
+======================= */
+.ledText {
+  overflow: hidden;
+  position: absolute;
+  color: #FFB400;
+  font-size: 24px;
+  font-weight: bold;
+  background: #333333;
+  width: 100%;
+  height: 30px;
+}
+
+/* CSS3グラデーションでドット感を出す */
+.ledText:after {
+  content: ' ';
+  display: block;
+  position: absolute;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  left: 0;
+  background: linear-gradient(#0a0600 1px, transparent 0px);
+  background: -webkit-linear-gradient(#0a0600 1px, transparent 0px);
+  background: -moz-linear-gradient(#0a0600 1px, transparent 0px);
+  background-size: 2px 2px;
+  z-index: 10;
+}
+
+/* CSS3アニメーションでスクロール */
+.ledText div.ledTextContents {
+  display: inline-block;
+  white-space: nowrap;
+  padding-left: 100%;
+  padding-top:5px;
+  -webkit-animation-name: marquee;
+  -webkit-animation-timing-function: linear;
+  -webkit-animation-iteration-count: infinite;
+  -webkit-animation-duration: 0s;
+  -moz-animation-name: marquee;
+  -moz-animation-timing-function: linear;
+  -moz-animation-iteration-count: infinite;
+  -moz-animation-duration: 0s;
+  animation-name: marquee;
+  animation-timing-function: linear;
+  animation-iteration-count: infinite;
+  animation-duration: 0s;
+  float:left;
+}
+
+.ledText div.rtl {
+  display: inline-block;
+  white-space: nowrap;
+  padding-left: 100%;
+  padding-top:5px;
+  -webkit-animation-name: marquee-rtl;
+  -webkit-animation-timing-function: linear;
+  -webkit-animation-iteration-count: infinite;
+  -webkit-animation-duration: 0s;
+  -moz-animation-name: marquee-rtl;
+  -moz-animation-timing-function: linear;
+  -moz-animation-iteration-count: infinite;
+  -moz-animation-duration: 0s;
+  animation-name: marquee-rtl;
+  animation-timing-function: linear;
+  animation-iteration-count: infinite;
+  animation-duration: 0s;
+  float:left;
+}
+
+.ledTextContents span.railway {
+  padding:0 1px;
+  color: #FFB400;
+}
+
+.ledTextContents span.status {
+  padding:0 1px;
+  color: #FF0000;
+}
+
+.ledTextContents span.information {
+  padding:0 1px;
+  color: #B4FF00;
+}
+
+@-webkit-keyframes marquee {
+  from   { -webkit-transform: translate(0%);}
+  99%,to { -webkit-transform: translate(-100%);}
+}
+@-moz-keyframes marquee {
+  from   { -moz-transform: translate(0%);}
+  99%,to { -moz-transform: translate(-100%);}
+}
+@keyframes marquee {
+  from   { transform: translate(0%);}
+  99%,to { transform: translate(-100%);}
+}
+
+
+@-webkit-keyframes  marquee-rtl {
+  from   { -webkit-transform: translate(-100%);}
+  99%,to { -webkit-transform: translate(0%);}
+}
+@-moz-keyframes marquee-rtl {
+  from   { -moz-transform: translate(-100%);}
+  99%,to { -moz-transform: translate(0%);}
+}
+@keyframes marquee-rtl {
+  from   { transform: translate(-100%);}
+  99%,to { transform: translate(0%);}
+}
+
+/** for jquery.bxslider.js 写真のスライド */
+.bx-wrapper .bx-caption span {
+  color: #eee;
+  font-family: Arial;
+  display: block;
+  font-size: 16px;
+  padding: 15px;
+  margin-right: 15px;
+}
+
+/** Twitterbutton */
+div.twitter a.ui-btn {
+    padding: 4px 7px 4px 7px;
+    border-radius:5px;
+    float:left;
+    box-shadow:0px 0px 10px #c3e1ff;
+    background-color: #EEE;
+    background-image: linear-gradient(#FFF, #DEDEDE);
+    border: 1px solid #CCC;
+    font-weight: bold;
+    text-shadow: 0px 1px 0px rgba(255, 255, 255, 0.5);
+    cursor: pointer;
+}
+
+
+#left_area {
+  width : 300px;
+  height : 650px;
+  float:left;
+}
+
+#main_area {
+  left: 300px;
+  widht: -webkit-calc(100% - 300px);
+  width: -moz-calc(100% - 300px);
+  width: calc(100% - 300px);
+  float:left;
+}
+
+#map_canvas {
+  width:100%;
+  height : 600px;
+}
+
+#bottom_area {
+  clear:both;
+}
+
+.example_area {
+  display:none;
+}
+
+.example_item {
+  margin:10px 10px 10px 10px;
+  text-align: center;
+  font-weight: bold;
+  color: #eeeeee;
+  text-shadow: 2px 2px 1px black;
+
+  /* border-radius */
+  border-radius:3px;
+  -webkit-border-radius:3px;
+  -moz-border-radius:3px;
+
+  /* box-shadow */
+  box-shadow:rgba(0, 0, 0, 0.227451) 2px 0px 6px 3px;
+  -webkit-box-shadow:rgba(0, 0, 0, 0.227451) 2px 0px 6px 3px;
+  -moz-box-shadow:rgba(0, 0, 0, 0.227451) 2px 0px 6px 3px;
+}
+
+#error_area {
+  color: #ff0000;
+}
