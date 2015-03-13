@@ -39,6 +39,11 @@
 
   <script id="tmplBusStop" type="text/x-jsrender">
     <p><b>{{:name}}</b></p>
+    <p>停車順：
+      {{for order}}
+        {{:}}
+      {{/for}}
+    </p>
     <p>平日：
     {{for timetableWeekday}}
       {{:}} 
@@ -175,7 +180,7 @@ $(function() {
         };
       };
     }
-    function createMarker(bs, data) {
+    function createMarker(bskey, bs, data) {
       var pos = new google.maps.LatLng(bs.lat, bs.long);
       var marker = new google.maps.Marker({
         icon: 'img/busstop.png'
@@ -187,12 +192,19 @@ $(function() {
         var timetableWeekday = [];
         var timetableSutday = [];
         var timetableHolykday = [];
+        var order = [];
+        for (var i = 0; i < data.BusStopOrder.length; ++i) {
+          if (data.BusStopOrder[i].busStopId == bskey) {
+            order.push(data.BusStopOrder[i].order);
+          }
+        }
+        console.log(bskey, data.BusStopOrder, order);
         for (var i in data.TimeTable) {
           var tm = data.TimeTable[i];
           console.log(tm);
           for (var j = 0; j < tm.table.length; ++j) {
             var t = tm.table[j];
-            if (t.busStop != bs.stopName) {
+            if (t.busStopId != bskey) {
               continue;
             }
             if (tm.dateType == 0) {
@@ -207,6 +219,7 @@ $(function() {
         console.log(timetableWeekday);
         var c = $('#tmplBusStop').render({
           name: bs.stopName,
+          order: order,
           timetableWeekday: timetableWeekday,
           timetableSutday: timetableSutday,
           timetableHolykday: timetableHolykday
@@ -324,7 +337,7 @@ $(function() {
         geojson.features.push(geom);
         for (var key in data.BusStop) {
           var bs = data.BusStop[key];
-          markers.push(createMarker(bs, data));
+          markers.push(createMarker(key, bs, data));
         }
       });
       showRoute(geojson);

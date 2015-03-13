@@ -139,7 +139,11 @@ def get_bus_timetable(wbname, sheetname, stop_offset_row, stop_offset_col, stopd
             if not v:
                 busrow, buscol = xls.next_cell(stopdirection)
                 continue
-            item.append({'busstop': stop_name_list[i], 'time': '%02d:%02d' % (v[3], v[4])})
+            item.append({
+              'busstop': stop_name_list[i],
+              'busstopIx': i,
+              'time': '%02d:%02d' % (v[3], v[4])}
+            )
             setflg = True
             busrow, buscol = xls.next_cell(stopdirection)
         if not setflg:
@@ -167,7 +171,13 @@ def get_bus_stop(csv):
             if i == 1:
                 #一行目はヘッダー
                 continue
+            orderstr = row[1].split(',')
+            order = []
+            for o in orderstr:
+                order.append(int(o))
+
             bus_stops.append({
+                'stopOrder' : order,
                 'stopName' : row[2],
                 'stopNameKana' : row[3],
                 'long' : row[6],

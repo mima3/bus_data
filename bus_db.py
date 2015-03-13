@@ -6,10 +6,10 @@ import sys
 sys.path.append(os.path.dirname(os.path.abspath(__file__)) + '/pyshp')
 import shapefile
 
-import logging
-logger = logging.getLogger('peewee')
-logger.setLevel(logging.DEBUG)
-logger.addHandler(logging.StreamHandler())
+#import logging
+#logger = logging.getLogger('peewee')
+#logger.setLevel(logging.DEBUG)
+#logger.addHandler(logging.StreamHandler())
 
 database_proxy = Proxy()  # Create a proxy for our db.
 
@@ -79,6 +79,16 @@ class BusStop(Model):
         database = database_proxy
 
 
+class BusStopOrder(Model):
+    order = IntegerField()
+    route= ForeignKeyField(RouteTable, related_name='orderroute')
+    busStop= ForeignKeyField(BusStop, related_name='orderbusstop')
+
+    class Meta:
+        database = database_proxy
+
+
+
 class TimeTable(Model):
     """
     """
@@ -122,7 +132,7 @@ def connect(path, spatialite_path, evn_sep=';'):
 
 def setup(path, spatialite_path, evn_sep=';'):
     connect(path, spatialite_path, evn_sep)
-    database_proxy.create_tables([MetaData, BusStop, TimeTable, TimeTableItem], True)
+    database_proxy.create_tables([MetaData, BusStop, BusStopOrder, TimeTable, TimeTableItem], True)
 
     database_proxy.get_conn().execute('SELECT InitSpatialMetaData()')
     database_proxy.get_conn().execute("""
@@ -149,7 +159,7 @@ def setup(path, spatialite_path, evn_sep=';'):
         Select AddGeometryColumn ("RouteTable", "Geometry", ?, "LINESTRING", 2);
     """, (SRID,))
 
-def _import_time_table(route, bus_rows, date_type, timetables):
+def _import_time_table(route, bus_stop_order, date_type, timetables):
     for t in timetables:
         timerow = TimeTable.create(
             route = route,
@@ -157,7 +167,7 @@ def _import_time_table(route, bus_rows, date_type, timetables):
         )
         # バス停毎の到着時間
         for s in t:
-            busstop = bus_rows[s['busstop']]
+            busstop = bus_stop_order[s['busstopIx'] + 1]
             TimeTableItem.create(
                  timeTable = timerow,
                  busStop = busstop,
@@ -245,7 +255,7 @@ def import_bus(meta_id, operation_company, line_name, shape, src_srid, timetable
                 (RouteTable.lineName==line_name) &
                 (RouteTable.route==timetable['route'])
             )
-            bus_rows = {}
+            bus_stop_order = {}
             for b in timetable['bus_stops']:
                 row = BusStop.create(
                     route = route,
@@ -254,10 +264,16 @@ def import_bus(meta_id, operation_company, line_name, shape, src_srid, timetable
                     lat = b['lat'],
                     long = b['long']
                 )
-                bus_rows[b['stopName']] = row
-            _import_time_table(route, bus_rows, 0, timetable['weekday_timetable'])
-            _import_time_table(route, bus_rows, 1, timetable['saturday_timetable'])
-            _import_time_table(route, bus_rows, 2, timetable['holyday_timetable'])
+                for o in b['stopOrder']:
+                    orderrow = BusStopOrder.create(
+                        route = route,
+                        busStop = row,
+                        order = o
+                    )
+                    bus_stop_order[o] = row
+            _import_time_table(route, bus_stop_order, 0, timetable['weekday_timetable'])
+            _import_time_table(route, bus_stop_order, 1, timetable['saturday_timetable'])
+            _import_time_table(route, bus_stop_order, 2, timetable['holyday_timetable'])
 
 
 def get_bus(dataName):
@@ -287,6 +303,7 @@ def get_bus(dataName):
             'routeName' : r[3],
             'geometry' : r[4],
             'BusStop' : {},
+            'BusStopOrder' : [],
             'TimeTable' : {}
         }
     query = BusStop.select(BusStop, RouteTable).where(
@@ -299,6 +316,15 @@ def get_bus(dataName):
             'lat': r.lat,
             'long': r.long
         }
+    query = BusStopOrder.select(BusStopOrder, BusStop, RouteTable).where(
+        (BusStopOrder.route << routes.keys())
+    ).join(RouteTable).switch(BusStopOrder).join(BusStop, on=(BusStop.id==BusStopOrder.busStop)).order_by(BusStopOrder.order)
+    for r in query:
+        routes[r.route.id]['BusStopOrder'].append({
+            'order': r.order,
+            'busStopId': r.busStop.id
+        })
+
     query = TimeTable.select(TimeTable, RouteTable).where(
         (TimeTable.route << routes.keys())
     ).join(RouteTable)
@@ -320,6 +346,7 @@ def get_bus(dataName):
     for r in query:
         routes[timetableids[r.timeTable.id]]['TimeTable'][r.timeTable.id]['table'].append({
             'busStop' : r.busStop.stopName,
+            'busStopId' : r.busStop.id,
             'time' : r.time
         })
     return {
