@@ -41,19 +41,21 @@ class MultiLineStringField(Field):
     db_field = 'multilinestring'
 
 
-class MetaTable(Model):
+class MetaData(Model):
     id = PrimaryKeyField()
     dataName = TextField(index=True)
     author = TextField()
     url = TextField()
     license = TextField()
 
+    class Meta:
+        database = database_proxy
 
 class RouteTable(Model):
     """
     """
     id = PrimaryKeyField()
-    meta = ForeignKeyField(MetaTable, related_name='route_meta')
+    metaData = ForeignKeyField(MetaData, related_name='route_meta')
     operationCompany = TextField(index=True)
     lineName = TextField(index=True)
     route = TextField(index=True)
@@ -120,19 +122,25 @@ def connect(path, spatialite_path, evn_sep=';'):
 
 def setup(path, spatialite_path, evn_sep=';'):
     connect(path, spatialite_path, evn_sep)
-    database_proxy.create_tables([BusStop, TimeTable, TimeTableItem], True)
+    database_proxy.create_tables([MetaData, BusStop, TimeTable, TimeTableItem], True)
 
     database_proxy.get_conn().execute('SELECT InitSpatialMetaData()')
     database_proxy.get_conn().execute("""
         CREATE TABLE IF NOT EXISTS "RouteTable" (
           "id" INTEGER PRIMARY KEY AUTOINCREMENT,
+          "metadata_id" INTEGER ,
           "operationCompany" TEXT,
           "lineName" TEXT ,
           "route" TEXT ,
-          "routeName" TEXT);
+          "routeName" TEXT,
+          FOREIGN KEY ("metadata_id") REFERENCES "MetaData" ("id")
+        );
     """)
     database_proxy.get_conn().execute("""
         CREATE INDEX IF NOT EXISTS RouteTable_operationCompany ON "RouteTable"("operationCompany");
+    """)
+    database_proxy.get_conn().execute("""
+        CREATE INDEX IF NOT EXISTS RouteTable_metadata_id ON "RouteTable"("metadata_id");
     """)
     database_proxy.get_conn().execute("""
         CREATE INDEX IF NOT EXISTS RouteTable_lineName ON "RouteTable"("lineName");
@@ -167,7 +175,20 @@ def _makeGeometryString(type, shape):
     r += ')'
     return r
 
-def import_bus(operation_company, line_name, shape, src_srid, timetables):
+def import_meta(meta):
+    MetaData.delete().filter(
+        (MetaData.dataName == meta['dataName'])
+    ).execute()
+
+    ret = MetaData.create(
+      dataName = meta['dataName'],
+      author = meta['author'],
+      url = meta['url'],
+      license = meta['license']
+    )
+    return ret.id
+
+def import_bus(meta_id, operation_company, line_name, shape, src_srid, timetables):
     with database_proxy.transaction():
         # 既存データの削除
         routeid = []
@@ -207,10 +228,11 @@ def import_bus(operation_company, line_name, shape, src_srid, timetables):
             database_proxy.get_conn().execute(
                 """
                 INSERT INTO RouteTable
-                  (operationCompany, lineName, route, routeName, geometry)
-                VALUES(?,?,?,?,Transform(GeometryFromText(?, ?),?))
+                  (metaData_id, operationCompany, lineName, route, routeName, geometry)
+                VALUES(?, ?,?,?,?,Transform(GeometryFromText(?, ?),?))
                 """,
                 (
+                    meta_id,
                     operation_company,
                     line_name,
                     timetable['route'],
@@ -238,7 +260,13 @@ def import_bus(operation_company, line_name, shape, src_srid, timetables):
             _import_time_table(route, bus_rows, 2, timetable['holyday_timetable'])
 
 
-def get_bus(operation_company):
+def get_bus(dataName):
+    try:
+        meta = MetaData.get(
+            (MetaData.dataName == dataName)
+        )
+    except MetaData.DoesNotExist:
+        return {}
     rows = database_proxy.get_conn().execute("""
       SELECT
         id,
@@ -249,8 +277,8 @@ def get_bus(operation_company):
       FROM
         RouteTable
       WHERE
-        operationCompany = ?
-    """ , (operation_company,))
+        metadata_id = ?
+    """ , (meta.id,))
     routes = {}
     for r in rows:
         routes[r[0]] = {
@@ -294,4 +322,12 @@ def get_bus(operation_company):
             'busStop' : r.busStop.stopName,
             'time' : r.time
         })
-    return routes
+    return {
+        "meta" : {
+            "dataName" : meta.dataName,
+            "author" : meta.author,
+            "url" : meta.url,
+            "license" : meta.license
+        },
+        "routes" : routes
+    }

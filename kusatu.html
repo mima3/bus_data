@@ -33,17 +33,51 @@
   <script type="text/javascript" src="js/d3/d3.min.js"></script>
   <script type="text/javascript" src="js/blockui/jquery.blockUI.js"></script>
   <script type="text/javascript" src="js/select2/select2.min.js"></script> 
+  <script type="text/javascript" src="js/jsrender/jsrender.min.js"></script> 
   <script src="https://maps.googleapis.com/maps/api/js?v=3.exp"></script>
   <script type="text/javascript" src="js/util.js"></script>
+
+  <script id="tmplBusStop" type="text/x-jsrender">
+    <p><b>{{:name}}</b></p>
+    <p>平日：
+    {{for timetableWeekday}}
+      {{:}} 
+    {{/for}}
+    </p>
+    <p>土曜：
+    {{for timetableSutday}}
+      {{:}} 
+    {{/for}}
+    </p>
+    <p>休日：
+    {{for timetableHolykday}}
+      {{:}} 
+    {{/for}}
+    </p>
+  </script>
 </head>
 <body>
   <div id="contents">
-    <p>この画面は「<a href="http://micrms.force.com/top">路面管理の高度化における実証実験</a>」で提供されているデータを表示するものです。</p>
-    <select id="selRoute">ルート表示</select>
-    <button id="btn_show">路面表示</button>
-    <div id="map" style="width: 900px; height: 600px"></div>
+    <h1>バスのオープンデータ</h1>
+    <div>ルートを表示後、バス停をクリックすると時刻表がでます。</div>
+    <div id = "left_area">
+      <div>
+        <select id="selRoute" multiple="true"></select>
+        <button id="btn_show">ルート表示</button>
+      </div>
+      <div>
+        <p>時刻表</p>
+        <div id="time_table"></div>
+      </div>
+    </div>
+    <div id = "main_area">
+      <div id="map" style="width: 900px; height: 600px"></div>
+    </div>
+    <div  style="clear:both;"></div>
+    <div id="meta"></div>
   </div>
 <script type="text/javascript">
+
 $(function() {
   /**
    * ローディング画面の表示
@@ -96,11 +130,11 @@ $(function() {
       width: '300px' ,
       dropdownAutoWidth: true
     });
-    function getBusInfo(operationCompany, callback) {
+    function getBusInfo(dataName, callback) {
       $.get(
         '/bus_data/json/get_bus_data',
         {
-          operationCompany : operationCompany
+          dataName : dataName
         },
         function (res) {
           callback(null, res);
@@ -111,22 +145,28 @@ $(function() {
       });
     }
     showBlockUI();
-    getBusInfo('草津市', function(err, res) {
-      busData = res;
+    getBusInfo('まめバス', function(err, res) {
+      busData = res['routes'];
+      metaData = res['meta'];
       $.unblockUI();
       console.log(err, res);
       $('#selRoute').empty();
       $('#selRoute').append($('<option>').html('').val(''));
       for (var i in busData) {
-        console.log(i);
         var opt = $('<option>').html(busData[i].routeName).val(i);
         $('#selRoute').append(opt);
+        $('#meta').empty();
+        $('#meta').append(
+          '<p>このデータは「' + metaData.dataName + '」により作成されています。</p>' +
+          '<p>作成者:' + metaData.author + '</p>' +
+          '<p>ライセンス:' + metaData.license + '</p>' +
+          '<p>URL:<a href ="' + metaData.url + '">' + metaData.url +'</a></p>' 
+        );
       }
     });
 
     var styleFeature = function() {
       return function(feature) {
-        console.log(feature);
         return {
           strokeWeight : 1,
           strokeColor : '#FF0000',
@@ -135,34 +175,56 @@ $(function() {
         };
       };
     }
-
-    $('#selRoute').change(function() {
-      var v = $('#selRoute').val();
-      if (!v) {
-        return;
-      }
-      
-      var data = busData[v];
-      var geom = JSON.parse(data.geometry);
-      var geojson =         {
-          'type': 'FeatureCollection',
-          'features': [
-            {
-              'type': 'Feature',
-              'properties': {routeid: v},
-              'geometry': geom
+    function createMarker(bs, data) {
+      var pos = new google.maps.LatLng(bs.lat, bs.long);
+      var marker = new google.maps.Marker({
+        icon: 'img/busstop.png'
+      });
+      marker.setPosition(pos);
+      marker.setMap(map);
+      google.maps.event.addListener(marker, 'click', function() {
+        $('#time_table').empty();
+        var timetableWeekday = [];
+        var timetableSutday = [];
+        var timetableHolykday = [];
+        for (var i in data.TimeTable) {
+          var tm = data.TimeTable[i];
+          console.log(tm);
+          for (var j = 0; j < tm.table.length; ++j) {
+            var t = tm.table[j];
+            if (t.busStop != bs.stopName) {
+              continue;
             }
-          ]
-        };
-      var pos = new google.maps.LatLng(geom.coordinates[0][1], geom.coordinates[0][0]);
-      console.log(geom.coordinates[0][1], geom.coordinates[0][0]);
-      map.panTo(pos);
-      if (overlay) {
-        overlay.setMap(null);
-      }
+            if (tm.dateType == 0) {
+              timetableWeekday.push(t.time);
+            } else if (tm.dateType == 1) {
+              timetableSutday.push(t.time);
+            } else {
+              timetableHolykday.push(t.time);
+            }
+          }
+        }
+        console.log(timetableWeekday);
+        var c = $('#tmplBusStop').render({
+          name: bs.stopName,
+          timetableWeekday: timetableWeekday,
+          timetableSutday: timetableSutday,
+          timetableHolykday: timetableHolykday
+        });
+        $('#time_table').append(c);
+        /*
+        var infowindow = new google.maps.InfoWindow({
+          content: bs.stopName
+        });
+        infowindow.open(map, marker);
+        */
+      });
+      return marker;
+    }
+    function showRoute(geojson) {
+
       overlay = new google.maps.OverlayView();
       overlay.onAdd = function() {
-        console.log('onAdd');
         var layer = d3.select(this.getPanes().overlayLayer).append("div").attr("class", "SvgOverlay");
         var svg = layer.append("svg");
         this.layer = layer;
@@ -170,7 +232,6 @@ $(function() {
         this.roadLayer =roadLayer;
         var markerOverlay = this;
         var overlayProjection = markerOverlay.getProjection();
-        console.log(roadLayer);
         //Google Projection作成
         var googleMapProjection = function (coordinates) {
           var googleCoordinates = new google.maps.LatLng(coordinates[1], coordinates[0]);
@@ -188,9 +249,7 @@ $(function() {
               ;
 
          var path = d3.geo.path().projection(googleMapProjection);
-         console.log(geojson.features);
          overlay.draw = function () {
-           console.log('draw');
            roadLayer.selectAll('path').remove();
            roadLayer.selectAll('.marker').remove();
 
@@ -203,7 +262,6 @@ $(function() {
                .attr("class", "road")
                .attr("fill", "none");
               d3.selectAll('.road').each(function(n) {
-                console.log(n);
                 var self = this;
                 var marker = roadLayer.append("circle")
                   .attr({
@@ -239,29 +297,37 @@ $(function() {
          };
       };
       overlay.onRemove = function() {
-        console.log('onremove');
         this.layer.remove();
       };
       overlay.setMap(map);
-      /*
-      for (var i = 0; i < features.length; i++) {
-        map.data.remove(features[i]);
+    }
+    $('#btn_show').button().click(function() {
+      if (overlay) {
+        overlay.setMap(null);
       }
-      features = map.data.addGeoJson(
-        {
-          'type': 'FeatureCollection',
-          'features': [
-            {
-              'type': 'Feature',
-              'properties': {routeid: v},
-              'geometry': geom
-            }
-          ]
+      for (var i = 0; i < markers.length; ++i) {
+        markers[i].setMap(null);
+      }
+      var selects = $('#selRoute').val();
+      if (!selects) {
+        return;
+      }
+      var geojson = {
+        'type': 'FeatureCollection',
+        'features': []
+      };
+      selects.forEach(function(v) {
+        var data = busData[v];
+        var geom = JSON.parse(data.geometry);
+        var pos = new google.maps.LatLng(geom.coordinates[0][1], geom.coordinates[0][0]);
+        map.panTo(pos);
+        geojson.features.push(geom);
+        for (var key in data.BusStop) {
+          var bs = data.BusStop[key];
+          markers.push(createMarker(bs, data));
         }
-      );
-      map.data.setStyle(styleFeature());
-      console.log(data);
-      */
+      });
+      showRoute(geojson);
     });
   });
 });

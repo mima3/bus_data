@@ -67,7 +67,9 @@ def _check_parameter_geometry(swlng, swlat, nelng, nelat, maxrange):
 
 @app.get('/json/get_bus_data')
 def get_bus_data():
-    operationCompany = request.query.operationCompany
-    ret = bus_db.get_bus(operationCompany)
+    dataName = request.query.dataName
+    ret = bus_db.get_bus(dataName)
+
     response.content_type = 'application/json;charset=utf-8'
+    response.set_header('Access-Control-Allow-Origin', '*')
     return json.dumps(ret)

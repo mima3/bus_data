@@ -25,7 +25,8 @@ def _get_timetable(download_path, tinfo, callback):
     )
     return timetables
 
-def import_bus(download_path, src, rule, callback):
+def import_bus(download_path, meta, src, rule, callback):
+    meta_id = bus_db.import_meta(meta)
     for s in src:
         timetables = []
         for tbl in s['timetables']:
@@ -45,4 +46,4 @@ def import_bus(download_path, src, rule, callback):
                 'holyday_timetable' : holyday_timetable
             })
         shapepath = os.path.join(download_path, s['shape'])
-        bus_db.import_bus(s['operation_company'], s['line_name'], shapepath, s['srid'], timetables)
+        bus_db.import_bus(meta_id, s['operation_company'], s['line_name'], shapepath, s['srid'], timetables)

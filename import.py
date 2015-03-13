@@ -40,7 +40,7 @@ def main(argvs, argc):
         if not os.path.exists(d['target']):
             os.makedirs(d['target'])
         downloader.download(d['target'], d['json']['download'])
-        importer.import_bus(d['target'], d['json']['import_rule'], d['json']['convert_rule'], callback)
+        importer.import_bus(d['target'], d['json']['meta'], d['json']['import_rule'], d['json']['convert_rule'], callback)
 
 
 if __name__ == '__main__':

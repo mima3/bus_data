@@ -1,9 +1,9 @@
 {
     "meta": {
-        dataname : "まめバス",
-        author : "草津市都市計画部交通政策課",
-        url : "http://www.city.kusatsu.shiga.jp/kurashi/kotsudorokasen/mamebus/opendata.html",
-        license : "クリエイティブ・コモンズ　表示4.0　ライセンス"
+        "dataName" : "まめバス",
+        "author" : "草津市都市計画部交通政策課",
+        "url" : "http://www.city.kusatsu.shiga.jp/kurashi/kotsudorokasen/mamebus/opendata.html",
+        "license" : "クリエイティブ・コモンズ　表示4.0　ライセンス"
     },
     "download" : {
         "http://www.city.kusatsu.shiga.jp/kurashi/kotsudorokasen/mamebus/opendata.files/M01_stop_times.xlsx" : "save_local",
