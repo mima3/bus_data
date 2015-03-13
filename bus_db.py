@@ -186,6 +186,47 @@ def _makeGeometryString(type, shape):
     return r
 
 def import_meta(meta):
+    dataid = []
+    query = MetaData.select().where(
+        (MetaData.dataName == meta['dataName'])
+    ).execute()
+    for row in query:
+        dataid.append(row.id)
+
+    # 既存データの削除
+    routeid = []
+    query = RouteTable.select().where(
+        (RouteTable.metaData << dataid)
+    ).execute()
+    for row in query:
+        routeid.append(row.id)
+
+    BusStop.delete().filter(
+        (BusStop.route << routeid)
+    ).execute()
+
+    BusStopOrder.delete().filter(
+        (BusStopOrder.route << routeid)
+    ).execute()
+
+    query = TimeTable.select().where(
+        (TimeTable.route << routeid)
+    ).execute()
+    timetableid = []
+    for row in query:
+        timetableid.append(row.id)
+    TimeTableItem.delete().filter(
+        (TimeTableItem.timeTable << timetableid)
+    ).execute()
+
+    TimeTable.delete().filter(
+        (TimeTable.route << routeid)
+    ).execute()
+
+    RouteTable.delete().filter(
+        (RouteTable.metaData << dataid)
+    ).execute()
+
     MetaData.delete().filter(
         (MetaData.dataName == meta['dataName'])
     ).execute()
@@ -200,34 +241,6 @@ def import_meta(meta):
 
 def import_bus(meta_id, operation_company, line_name, shape, src_srid, timetables):
     with database_proxy.transaction():
-        # 既存データの削除
-        routeid = []
-        query = RouteTable.select().where(
-            (RouteTable.operationCompany == operation_company) &
-            (RouteTable.lineName == line_name)
-        ).execute()
-        for row in query:
-            routeid.append(row.id)
-
-        BusStop.delete().filter(
-            (BusStop.route << routeid)
-        ).execute()
-
-        query = TimeTable.select().where(
-            (TimeTable.route << routeid)
-        ).execute()
-
-        timetableid = []
-        for row in query:
-            timetableid.append(row.id)
-        TimeTableItem.delete().filter(
-            TimeTableItem.timeTable << timetableid
-        ).execute()
-
-        TimeTable.delete().filter(
-            (TimeTable.route << routeid)
-        ).execute()
-
         routedict = {}
         sf = shapefile.Reader(shape)
         shaperec = sf.iterShapeRecords()

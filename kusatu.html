@@ -156,18 +156,17 @@ $(function() {
       $.unblockUI();
       console.log(err, res);
       $('#selRoute').empty();
-      $('#selRoute').append($('<option>').html('').val(''));
       for (var i in busData) {
         var opt = $('<option>').html(busData[i].routeName).val(i);
         $('#selRoute').append(opt);
-        $('#meta').empty();
-        $('#meta').append(
-          '<p>このデータは「' + metaData.dataName + '」により作成されています。</p>' +
-          '<p>作成者:' + metaData.author + '</p>' +
-          '<p>ライセンス:' + metaData.license + '</p>' +
-          '<p>URL:<a href ="' + metaData.url + '">' + metaData.url +'</a></p>' 
-        );
       }
+      $('#meta').empty();
+      $('#meta').append(
+        '<p>このデータは「' + metaData.dataName + '」により作成されています。</p>' +
+        '<p>作成者:' + metaData.author + '</p>' +
+        '<p>ライセンス:' + metaData.license + '</p>' +
+        '<p>URL:<a href ="' + metaData.url + '">' + metaData.url +'</a></p>' 
+      );
     });
 
     var styleFeature = function() {
@@ -198,10 +197,8 @@ $(function() {
             order.push(data.BusStopOrder[i].order);
           }
         }
-        console.log(bskey, data.BusStopOrder, order);
         for (var i in data.TimeTable) {
           var tm = data.TimeTable[i];
-          console.log(tm);
           for (var j = 0; j < tm.table.length; ++j) {
             var t = tm.table[j];
             if (t.busStopId != bskey) {
@@ -216,7 +213,6 @@ $(function() {
             }
           }
         }
-        console.log(timetableWeekday);
         var c = $('#tmplBusStop').render({
           name: bs.stopName,
           order: order,
