@@ -82,7 +82,7 @@ class BusStopOrder(Model):
     stopOrder = IntegerField()
     route= ForeignKeyField(RouteTable, related_name='orderroute')
     busStop= ForeignKeyField(BusStop, related_name='orderbusstop')
-    during = IntegerField()
+    duration = IntegerField()
 
     class Meta:
         database = database_proxy
@@ -259,7 +259,7 @@ def _subBusStopTime(fromTime, toTime):
     return toMin - fromMin
 
 
-def _getBusStopTimeDuring(fromBusStopInfo, toBusStopInfo, ix):
+def _getBusStopTimeDuration(fromBusStopInfo, toBusStopInfo, ix):
     flg = False
     for f in fromBusStopInfo:
         fid = f['id']
@@ -270,7 +270,7 @@ def _getBusStopTimeDuring(fromBusStopInfo, toBusStopInfo, ix):
         if flg:
             break
     if not flg:
-        raise Exception('_getBusStopTimeDuring', 'unexpected data')
+        raise Exception('_getBusStopTimeDuration', 'unexpected data')
     return _subBusStopTime(f['time'], t['time'])
 
 
@@ -318,7 +318,7 @@ def import_bus(meta_id, operation_company, line_name, shape, src_srid, timetable
             ix = 0
             fromBusStopInfo = None
             for o, row in bus_stop_order.items():
-                during = 0
+                durationFromStart = 0
                 busStopInfo = []
                 timeIx = 0
                 # スタート開始駅からの到着時間の差を求める
@@ -330,12 +330,12 @@ def import_bus(meta_id, operation_company, line_name, shape, src_srid, timetable
                 if ix == 0:
                     fromBusStopInfo = busStopInfo
                 else:
-                    during = _getBusStopTimeDuring(fromBusStopInfo, busStopInfo, ix)
+                    durationFromStart = _getBusStopTimeDuration(fromBusStopInfo, busStopInfo, ix)
                 orderrow = BusStopOrder.create(
                     route = route,
                     busStop = row,
                     stopOrder = o,
-                    during = during
+                    duration = durationFromStart
                 )
                 ix += 1
             _import_time_table(route, bus_stop_order, 0, timetable['weekday_timetable'])
@@ -520,7 +520,7 @@ def get_bus_stop_cost(from_bus_stop, to_bus_stop):
     指定のバス停間の乗車時間
     """
     rows = database_proxy.get_conn().execute("""
-    select (t2.during-t1.during) as cost  from 
+    select (t2.duration-t1.duration) as cost  from 
       busstoporder as t1
       inner join busstoporder as t2
         on (t1.route_id = t2.route_id and t2.stopOrder > t1.stopOrder)
@@ -537,7 +537,7 @@ def get_bus_stop_route_connect(bus_stop):
     """
     指定のバス停を含むルートで乗り換え可能なバス亭の一覧
     """
-    # costは乗降時間(t2.during-t1.during) + 100mあたり1分半として計算
+    # costは乗降時間(t2.duration-t1.duration) + 100mあたり1分半として計算
     rows = database_proxy.get_conn().execute("""
     select 
       busStopFrom_id, busStopTo_id, route_id, min(cost) as cost
@@ -546,7 +546,7 @@ def get_bus_stop_route_connect(bus_stop):
       busStopFrom_id, 
       busStopTo_id, 
       ConnectBusStop.route_id  as route_id,
-      ((t2.during-t1.during) + (distance * 100 * 1.5)) as cost
+      ((t2.duration-t1.duration) + (distance * 100 * 1.5)) as cost
     from 
       busstoporder as t1
       inner join busstoporder as t2

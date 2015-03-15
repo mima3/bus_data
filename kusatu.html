@@ -83,8 +83,8 @@
   <div id="contents">
     <h1>バス路線データ</h1>
     <div>「スタート地点」「エンド地点」を指定して探索を行うことにより、おおよそ１ｋｍいないのバス停を検索し、そのルートを調べます。</div>
-    <div>また、「路線表示」後、バス停をクリックすると時刻表がでます。</div>
-    <div>経路探索のアルゴリズムは単純なので、実際の最短経路を表すものとは限らないので注意してください。</div>
+    <div>この所要時間にはバスの待ち時間は考慮していません。また、実際の最短経路を表すものとは限らないので注意してください。</div>
+    <div>なお、「路線表示」後、バス停をクリックすると時刻表がでます。</div>
     <div id = "left_area">
       <div>
         <div>
@@ -456,6 +456,7 @@ $(function() {
      * ルート表示
      */
     $('#btn_route').button().click(function() {
+      $('#route_table').empty();
       selectedBusStop = [];
       showBlockUI();
       $.get(
@@ -473,26 +474,34 @@ $(function() {
             alert('開始位置、終了位置のいづれかの付近にバス停が見つけられませんでした。');
             return;
           }
-          $('#route_table').empty();
-          var c = $('#tmplRoute').render(res);
-          $('#route_table').append(c);
-          
-          var sel = [];
-          for (var i = 0; i < res.route.length; ++i) {
-            selectedBusStop.push(res.route[i].stopId);
-            if (sel.indexOf(res.route[i].routeId) == -1) {
-              sel.push(res.route[i].routeId);
-            }
-          }
-          $("#selRoute").select2('val', sel);
-          showLine();
 
           var posStart = new google.maps.LatLng(res.route[0].lat, res.route[0].long);
           var posEnd = new google.maps.LatLng(res.route[res.route.length - 1].lat, res.route[res.route.length - 1].long);
           callDirectionService(posEnd, endMarker.position, function(err, resEnd) {
             directionsEndDisplay.setDirections(resEnd);
+            console.log(resEnd);
             callDirectionService(startMarker.position, posStart, function(err, resStart) {
               directionsStartDisplay.setDirections(resStart);
+              console.log('Start～バス亭', resStart.routes[0].legs[0].duration.value / 60);
+              console.log('バス', res.cost);
+              console.log('バス停～End', resEnd.routes[0].legs[0].duration.value / 60);
+              res.cost = Math.round(
+                           resStart.routes[0].legs[0].duration.value / 60 +
+                           res.cost +
+                           resEnd.routes[0].legs[0].duration.value / 60
+                         );
+              var c = $('#tmplRoute').render(res);
+              $('#route_table').append(c);
+              
+              var sel = [];
+              for (var i = 0; i < res.route.length; ++i) {
+                selectedBusStop.push(res.route[i].stopId);
+                if (sel.indexOf(res.route[i].routeId) == -1) {
+                  sel.push(res.route[i].routeId);
+                }
+              }
+              $("#selRoute").select2('val', sel);
+              showLine();
             });
           });
         },
