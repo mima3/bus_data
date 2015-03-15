@@ -575,7 +575,7 @@ def get_bus_route_min_cost(from_bus_stop, to_bus_stop, current_route = [], max_s
         return None, 9999999
     cost = get_bus_stop_cost(from_bus_stop, to_bus_stop)
     if not cost is None:
-        if cost < min_cost:
+        if (current_cost + cost) < min_cost:
             return current_route + [to_bus_stop], current_cost + cost
         else:
             # このパスは最低コストを下回らない
@@ -615,7 +615,7 @@ def get_bus_route_min_trasfer(from_bus_stop, to_bus_stop, current_route = [], ma
         return None, 9999999
     cost = get_bus_stop_cost(from_bus_stop, to_bus_stop)
     if not cost is None:
-        if cost < min_cost:
+        if len(current_route + [to_bus_stop]) < min_transfer:
             return current_route + [to_bus_stop], current_cost + cost
         else:
             # このパスは最低コストを下回らない
@@ -638,11 +638,13 @@ def get_bus_route_min_trasfer(from_bus_stop, to_bus_stop, current_route = [], ma
         )
         if route is None:
             continue
-        if min_transfer >= len(route):
+        if min_transfer > len(route):
             min_transfer = len(route)
-            if min_cost > cost:
-                min_cost = cost
-                min_route = route
+            min_cost = cost
+            min_route = route
+        elif min_transfer == len(route) and min_cost > cost:
+            min_cost = cost
+            min_route = route
     return min_route, min_cost
 
 
