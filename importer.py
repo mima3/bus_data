@@ -47,3 +47,5 @@ def import_bus(download_path, meta, src, rule, callback):
             })
         shapepath = os.path.join(download_path, s['shape'])
         bus_db.import_bus(meta_id, s['operation_company'], s['line_name'], shapepath, s['srid'], timetables)
+    #100メートル圏内は乗り換え可能とする
+    bus_db.update_busstop_realtion(0.2)

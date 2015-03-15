@@ -73,3 +73,17 @@ def get_bus_data():
     response.content_type = 'application/json;charset=utf-8'
     response.set_header('Access-Control-Allow-Origin', '*')
     return json.dumps(ret)
+
+
+@app.get('/json/find_bus_route_by_pos')
+def find_bus_route_by_pos():
+    from_long = float(request.query.from_long)
+    from_lat = float(request.query.from_lat)
+    to_long = float(request.query.to_long)
+    to_lat = float(request.query.to_lat)
+
+    ret = bus_db.find_bus_route_by_pos(from_long, from_lat, to_long, to_lat, 1, 5)
+
+    response.content_type = 'application/json;charset=utf-8'
+    response.set_header('Access-Control-Allow-Origin', '*')
+    return json.dumps(ret)

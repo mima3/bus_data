@@ -38,7 +38,8 @@
   <script type="text/javascript" src="js/util.js"></script>
 
   <script id="tmplBusStop" type="text/x-jsrender">
-    <p><b>{{:name}}</b></p>
+    <p>時刻表</p>
+    <p><b>{{:name}}</b> ID:{{:id}} 路線名：{{:routeName}}</p>
     <p>停車順：
       {{for order}}
         {{:}}
@@ -60,19 +61,45 @@
     {{/for}}
     </p>
   </script>
+  <script id="tmplRoute" type="text/x-jsrender">
+    <p><b>所有時間(分):</b>{{:cost}}</p>
+    <table class="normal">
+      <thead>
+        <th>バス停</th>
+        <th>路線</th>
+      </thead>
+      <tbody>
+        {{for route}}
+        <tr>
+            <td><a href="#" onClick="setCenter({{:lat}}, {{:long}});">{{:stopName}}</a></td>
+            <td>{{:routeName}}</td>
+        </tr>
+        {{/for}}
+      </tbody>
+    </table>
+  </script>
 </head>
 <body>
   <div id="contents">
     <h1>バス路線データ</h1>
-    <div>ルートを表示後、バス停をクリックすると時刻表がでます。</div>
+    <div>「スタート地点」「エンド地点」を指定して探索を行うことにより、おおよそ１ｋｍいないのバス停を検索し、そのルートを調べます。</div>
+    <div>また、「路線表示」後、バス停をクリックすると時刻表がでます。</div>
+    <div>経路探索のアルゴリズムは単純なので、実際の最短経路を表すものとは限らないので注意してください。</div>
     <div id = "left_area">
       <div>
-        <select id="selRoute" multiple="true"></select>
-        <button id="btn_show">ルート表示</button>
+        <div>
+          <select id="selRoute" multiple="true"></select>
+          <button id="btn_show">路線表示</button>
+        </div>
+        <div>
+          <button id="btn_start">スタート地点</button>
+          <button id="btn_end">エンド地点</button>
+          <button id="btn_route">探索</button>
+        </div>
       </div>
       <div>
-        <p>時刻表</p>
         <div id="time_table"></div>
+        <div id="route_table"></div>
       </div>
     </div>
     <div id = "main_area">
@@ -82,6 +109,26 @@
     <div id="meta"></div>
   </div>
 <script type="text/javascript">
+
+// TODO このグローバル領域に出たデータをなんとかしたい。
+var latlng = new google.maps.LatLng(35.02231309126647,135.9622116936153);
+var opts = {
+  zoom: 13,
+  center: latlng,
+  //scrollwheel: false,
+  disableDoubleClickZoom: true,
+  scaleControl: false,
+  //zoomControl : false,
+  streetViewControl : false,
+  mapTypeId: google.maps.MapTypeId.ROADMAP
+};
+
+var map = new google.maps.Map(document.getElementById("map"), opts);
+
+function setCenter(lat, long) {
+  var pos = new google.maps.LatLng(lat, long);
+  map.panTo(pos);
+}
 
 $(function() {
   /**
@@ -105,27 +152,45 @@ $(function() {
   }
 
   $(document).ready(function() {
-    var latlng = new google.maps.LatLng(35.02231309126647,135.9622116936153);
-    var opts = {
-      zoom: 13,
-      center: latlng,
-      //scrollwheel: false,
-      disableDoubleClickZoom: true,
-      scaleControl: false,
-      //zoomControl : false,
-      streetViewControl : false,
-      mapTypeId: google.maps.MapTypeId.ROADMAP
-    };
-    var map = new google.maps.Map(document.getElementById("map"), opts);
     var markers = [];
     var features = [];
     var busData;
     var overlay;
+    var selectedBusStop = [];
 
     function projectPoint(x, y) {
       var point = map.latLngToLayerPoint(new L.LatLng(y, x));
       this.stream.point(point.x, point.y);
     }
+
+
+    var startMarker = new google.maps.Marker({
+      position: new google.maps.LatLng(0, 0),
+      title: 'Start',
+      draggable: true,
+      icon: 'img/start_marker.png'
+    });
+    startMarker.setMap(map);
+
+    var endMarker = new google.maps.Marker({
+      position: new google.maps.LatLng(0, 0),
+      title: 'End',
+      draggable: true,
+      icon: 'img/end_marker.png'
+    });
+    endMarker.setMap(map);
+
+    $('#btn_start').button().click(function() {
+      var latlngBounds = map.getBounds();
+      var center = latlngBounds.getCenter();
+      startMarker.setPosition(center);
+    });
+
+    $('#btn_end').button().click(function() {
+      var latlngBounds = map.getBounds();
+      var center = latlngBounds.getCenter();
+      endMarker.setPosition(center);
+    });
 
 
     map.data.addListener('click', function(e) {
@@ -179,10 +244,14 @@ $(function() {
         };
       };
     }
-    function createMarker(bskey, bs, data) {
+    function createMarker(bskey, bs, routeName, data) {
       var pos = new google.maps.LatLng(bs.lat, bs.long);
+      var img = 'img/busstop.png';
+      if (selectedBusStop.indexOf(Number(bskey)) != -1) {
+        img = 'img/busstop_selected.png';
+      }
       var marker = new google.maps.Marker({
-        icon: 'img/busstop.png'
+        icon: img
       });
       marker.setPosition(pos);
       marker.setMap(map);
@@ -215,6 +284,8 @@ $(function() {
         }
         var c = $('#tmplBusStop').render({
           name: bs.stopName,
+          id: bskey,
+          routeName: routeName,
           order: order,
           timetableWeekday: timetableWeekday,
           timetableSutday: timetableSutday,
@@ -310,7 +381,8 @@ $(function() {
       };
       overlay.setMap(map);
     }
-    $('#btn_show').button().click(function() {
+
+    function showLine() {
       if (overlay) {
         overlay.setMap(null);
       }
@@ -333,11 +405,105 @@ $(function() {
         geojson.features.push(geom);
         for (var key in data.BusStop) {
           var bs = data.BusStop[key];
-          markers.push(createMarker(key, bs, data));
+          markers.push(createMarker(key, bs, data.routeName, data));
         }
       });
       showRoute(geojson);
+    }
+    /**
+     * 路線表示
+     */
+    $('#btn_show').button().click(function() {
+      showLine();
     });
+
+    var rendererOptions = {
+      draggable: false,
+      preserveViewport: false,
+      markerOptions: {
+        visible: false
+      }
+    };
+    var directionsStartDisplay = new google.maps.DirectionsRenderer(rendererOptions);
+    directionsStartDisplay.setMap(map);
+
+    var directionsEndDisplay = new google.maps.DirectionsRenderer(rendererOptions);
+    directionsEndDisplay.setMap(map);
+
+    var directionsService = new google.maps.DirectionsService();
+
+    function callDirectionService(startPos, endPos, callback) {
+      var request = {
+        origin: startPos,
+        destination: endPos,
+        travelMode: google.maps.DirectionsTravelMode.WALKING,
+        unitSystem: google.maps.DirectionsUnitSystem.METRIC,
+        optimizeWaypoints: true,
+        avoidHighways: false,
+        avoidTolls: false
+      };
+
+      directionsService.route(request, function(response, status) {
+        if (status != google.maps.DirectionsStatus.OK) {
+          callback(status, null);
+          return;
+        }
+        callback(null, response);
+      });
+    }
+
+    /**
+     * ルート表示
+     */
+    $('#btn_route').button().click(function() {
+      selectedBusStop = [];
+      showBlockUI();
+      $.get(
+        '/bus_data/json/find_bus_route_by_pos',
+        {
+          from_long : startMarker.position.lng(),
+          from_lat : startMarker.position.lat(),
+          to_long : endMarker.position.lng(),
+          to_lat : endMarker.position.lat()
+        },
+        function (res) {
+          $.unblockUI();
+          console.log(res);
+          if (!res.route) {
+            alert('開始位置、終了位置のいづれかの付近にバス停が見つけられませんでした。');
+            return;
+          }
+          $('#route_table').empty();
+          var c = $('#tmplRoute').render(res);
+          $('#route_table').append(c);
+          
+          var sel = [];
+          for (var i = 0; i < res.route.length; ++i) {
+            selectedBusStop.push(res.route[i].stopId);
+            if (sel.indexOf(res.route[i].routeId) == -1) {
+              sel.push(res.route[i].routeId);
+            }
+          }
+          $("#selRoute").select2('val', sel);
+          showLine();
+
+          var posStart = new google.maps.LatLng(res.route[0].lat, res.route[0].long);
+          var posEnd = new google.maps.LatLng(res.route[res.route.length - 1].lat, res.route[res.route.length - 1].long);
+          callDirectionService(posEnd, endMarker.position, function(err, resEnd) {
+            directionsEndDisplay.setDirections(resEnd);
+            callDirectionService(startMarker.position, posStart, function(err, resStart) {
+              directionsStartDisplay.setDirections(resStart);
+            });
+          });
+        },
+        'json'
+      ).error(function(e){
+        $.unblockUI();
+        console.log(e);
+      });
+
+    });
+
   });
 });
 
