@@ -20,12 +20,6 @@
     width: 8000px;
     height: 8000px;        
   }
-
-  .SvgOverlay path {
-    stroke: black;
-    stroke-width: 1px;
-    fill-opacity: .6;
-  }
   </style>
   <script type="text/javascript" src="js/async/lib/async.js"></script>
   <script type="text/javascript" src="js/jquery/jquery-1.11.1.min.js"></script>
@@ -301,7 +295,7 @@ $(function() {
       });
       return marker;
     }
-    function showRoute(geojson) {
+    function showRoute(geojson, geoJsonSelect) {
 
       overlay = new google.maps.OverlayView();
       overlay.onAdd = function() {
@@ -309,7 +303,8 @@ $(function() {
         var svg = layer.append("svg");
         this.layer = layer;
         var roadLayer = svg.append("g").attr("class", "road_grp");
-        this.roadLayer =roadLayer;
+        var roadLayerSel = svg.append("g").attr("class", "road_grpSel");
+
         var markerOverlay = this;
         var overlayProjection = markerOverlay.getProjection();
         //Google Projection作成
@@ -325,8 +320,7 @@ $(function() {
         filter.append("svg:feGaussianBlur")
               .attr("in", "SourceGraphic")
               .attr("stdDeviation", 2)
-              .attr("result", "blur")
-              ;
+              .attr("result", "blur");
 
          var path = d3.geo.path().projection(googleMapProjection);
          overlay.draw = function () {
@@ -340,21 +334,42 @@ $(function() {
              .enter().append("svg:path")
                .attr("d", path)
                .attr("class", "road")
+               .attr("stroke", function(d, i) {
+                 return '#FF0000';
+               })
+               .attr("stroke-width", "2px")
+               .attr("stroke-opacity", "0.6")
                .attr("fill", "none");
-              d3.selectAll('.road').each(function(n) {
-                var self = this;
-                var marker = roadLayer.append("circle")
-                  .attr({
-                    r: 10,
-                    fill: 'red',
-                    filter: 'url(#blur)',
-                    transform: function () {
-                      var p = self.getPointAtLength(0);
-                      return "translate(" + [p.x, p.y] + ")";
-                    }
-                  });
-                setTransition(marker, self);
-              });
+
+           roadLayerSel.selectAll("path")
+             .data(geoJsonSelect.features)
+             .attr("d", path) 
+             .enter().append("svg:path")
+               .attr("d", path)
+               .attr("class", "road-selected")
+               .attr("stroke", function(d, i) {
+                 return '#0000FF';
+               })
+               .attr("stroke-width", "4px")
+               .attr("stroke-opacity", "0.6")
+               .attr("fill", "none");
+
+
+            // 路線上のマークの移動
+            d3.selectAll('.road').each(function(n) {
+              var self = this;
+              var marker = roadLayer.append("circle")
+                .attr({
+                  r: 5,
+                  fill: 'red',
+                  filter: 'url(#blur)',
+                  transform: function () {
+                    var p = self.getPointAtLength(0);
+                    return "translate(" + [p.x, p.y] + ")";
+                  }
+                });
+              setTransition(marker, self);
+            });
               
             function setTransition(m, pathNode) {
               var pathLength = pathNode.getTotalLength();
@@ -397,18 +412,113 @@ $(function() {
         'type': 'FeatureCollection',
         'features': []
       };
+      var geojsonSelect = {
+        'type': 'FeatureCollection',
+        'features': []
+      };
       selects.forEach(function(v) {
         var data = busData[v];
         var geom = JSON.parse(data.geometry);
         var pos = new google.maps.LatLng(geom.coordinates[0][1], geom.coordinates[0][0]);
         map.panTo(pos);
         geojson.features.push(geom);
+        var selectedRoute = false;
+        var selectedIx = 0;
         for (var key in data.BusStop) {
           var bs = data.BusStop[key];
           markers.push(createMarker(key, bs, data.routeName, data));
+          if (selectedBusStop.indexOf(Number(key)) != -1 && !selectedRoute) {
+            selectedRoute = true;
+            selectedIx = selectedBusStop.indexOf(Number(key));
+          }
+        }
+        if (selectedRoute) {
+          var startBus;
+          var endBus;
+          for (var i = 0; i < selectedBusStop.length; ++i) {
+            var key = selectedBusStop[i].toString();
+            if (data.BusStop[key]) {
+              if (!startBus) {
+                startBus = data.BusStop[key];
+              } else {
+                endBus = data.BusStop[key];
+              }
+            }
+          }
+          var geomSelect = JSON.parse(data.geometry);
+          var status = 0;
+          var copyCoordinates = [];
+          var preCoordinate;
+          function checkNearPoint(lat, long, curCoordinate, preCoordinate) {
+            var d = Math.sqrt(
+              Math.pow(((curCoordinate[0] - long)/ 0.0111), 2) + Math.pow(((curCoordinate[1] - lat)/ 0.0091), 2)
+            );
+            // 座標がcurCoordinateの10m以内なら同じ点とみなす
+            if (d < 0.01) {
+              return true;
+            }
+            if (!preCoordinate) {
+              // 前回値がない場合は調べようがないのでfalseとする
+              return false;
+            }
+            // 線分上の一番近い点を求める。
+            var a_x = curCoordinate[0] - preCoordinate[0];
+            var a_y = curCoordinate[1] - preCoordinate[1];
+            var b_x = long - preCoordinate[0];
+            var b_y = lat - preCoordinate[1];
+
+            // 内積 ÷ |a|^2
+            r = (a_x * b_x + a_y * b_y) / (a_x * a_x + a_y * a_y);
+            linex = preCoordinate[0] + r * a_x;
+            liney = preCoordinate[1] + r * a_y;
+            
+            if(r <= 0){
+              // 前回値が最も近いが、これはチェック済み
+              return false;
+            }else if(r >= 1){
+              // 今回値が最も近いが、これはチェック済み
+              return false;
+            }
+            var d = Math.sqrt(
+              Math.pow(((linex - long)/ 0.0111), 2) + Math.pow(((liney - lat)/ 0.0091), 2)
+            );
+            // 座標がcurCoordinateの30m以内なら同じ点とみなす
+            if (d < 0.01) {
+              return true;
+            }
+            return false;
+          }
+          geomSelect.coordinates.forEach(function(c) {
+            var dS = Math.sqrt(
+              Math.pow(((c[0] - startBus.long)/ 0.0111), 2) + Math.pow(((c[1] - startBus.lat)/ 0.0091), 2)
+            );
+            var dE = Math.sqrt(
+              Math.pow(((c[0] - endBus.long)/ 0.0111), 2) + Math.pow(((c[1] - endBus.lat)/ 0.0091), 2)
+            );
+            if (status == 0) {
+              // 開始位置が未検知
+              if (checkNearPoint(startBus.lat, startBus.long, c, preCoordinate)) {
+                // 50m以内の点を取る。
+                status = 1;
+                copyCoordinates.push([startBus.long, startBus.lat]);
+              }
+            } else if (status == 1) {
+              // 終了位置を検知済み
+              if (checkNearPoint(endBus.lat, endBus.long, c, preCoordinate)) {
+                status = 2;
+                copyCoordinates.push([endBus.long, endBus.lat]);
+              }
+              else {
+                copyCoordinates.push(c);
+              }
+            }
+            preCoordinate = c;
+          });
+          geomSelect.coordinates = copyCoordinates;
+          geojsonSelect.features.push(geomSelect);
         }
       });
-      showRoute(geojson);
+      showRoute(geojson, geojsonSelect);
     }
     /**
      * 路線表示
@@ -479,7 +589,6 @@ $(function() {
           var posEnd = new google.maps.LatLng(res.route[res.route.length - 1].lat, res.route[res.route.length - 1].long);
           callDirectionService(posEnd, endMarker.position, function(err, resEnd) {
             directionsEndDisplay.setDirections(resEnd);
-            console.log(resEnd);
             callDirectionService(startMarker.position, posStart, function(err, resStart) {
               directionsStartDisplay.setDirections(resStart);
               console.log('Start～バス亭', resStart.routes[0].legs[0].duration.value / 60);

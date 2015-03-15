@@ -663,11 +663,19 @@ def find_bus_route_by_pos(long_from, lat_from, long_to, lat_to, distance, limit)
             tix += 1
         fix += 1
     min_route = 999999
+    min_route_cost = 999999
     min_r = None
     for r in results:
         if len(r['route']) < min_route:
             min_r = r
             min_route = len(r['route'])
+            min_route_cost = r['cost']
+        if len(r['route']) == min_route:
+            # 等しい場合はcostをチェック
+            if r['cost'] < min_route_cost:
+                min_r = r
+                min_route = len(r['route'])
+                min_route_cost = r['cost']
     if min_r is None:
         return {}
     ret = {
