@@ -549,7 +549,7 @@ def get_bus_stop_route_connect(bus_stop):
       busStopFrom_id, 
       busStopTo_id, 
       ConnectBusStop.route_id  as route_id,
-      ((t2.duration-t1.duration) + (distance * 100 * 1.5)) as cost
+      ((t2.duration-t1.duration) + (distance * 10 * 1.5)) as cost
     from 
       busstoporder as t1
       inner join busstoporder as t2
@@ -662,8 +662,8 @@ def find_bus_route_by_pos(long_from, lat_from, long_to, lat_to, distance, limit)
         for t in toBusStop:
             route, cost = get_bus_route_min_trasfer(f['id'], t['id'])
             if not route is None:
-                cost += f['distance'] * 100 * 1.5;
-                cost += t['distance'] * 100 * 1.5;
+                cost += f['distance'] * 10 * 1.5;
+                cost += t['distance'] * 10 * 1.5;
                 results.append({'route': route, 'cost' : cost })
             tix += 1
         fix += 1
