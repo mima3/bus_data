@@ -464,7 +464,10 @@ def get_near_bus_stop(long, lat, distance, limit):
     ).distinct().join(RouteTable).where(R(filter)).order_by(R('sub')).limit(limit)
     ret = []
     for r in query:
-       ret.append(r.id)
+       ret.append({
+           'id' : r.id,
+           'distance' : r.sub
+       })
     return ret
 
 
@@ -657,9 +660,11 @@ def find_bus_route_by_pos(long_from, lat_from, long_to, lat_to, distance, limit)
     for f in fromBusStop:
         tix = 0
         for t in toBusStop:
-            route, cost = get_bus_route_min_trasfer(f, t)
+            route, cost = get_bus_route_min_trasfer(f['id'], t['id'])
             if not route is None:
-                results.append({'route': route, 'cost' : cost})
+                cost += f['distance'] * 100 * 1.5;
+                cost += t['distance'] * 100 * 1.5;
+                results.append({'route': route, 'cost' : cost })
             tix += 1
         fix += 1
     min_route = 999999

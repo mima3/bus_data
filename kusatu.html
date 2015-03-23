@@ -111,8 +111,8 @@ var opts = {
   center: latlng,
   //scrollwheel: false,
   disableDoubleClickZoom: true,
-  scaleControl: false,
   //zoomControl : false,
+  scaleControl: true,
   streetViewControl : false,
   mapTypeId: google.maps.MapTypeId.ROADMAP
 };
@@ -594,11 +594,13 @@ $(function() {
               console.log('Start～バス亭', resStart.routes[0].legs[0].duration.value / 60);
               console.log('バス', res.cost);
               console.log('バス停～End', resEnd.routes[0].legs[0].duration.value / 60);
+              /* 直線距離で加算済みなので、無視。
               res.cost = Math.round(
                            resStart.routes[0].legs[0].duration.value / 60 +
                            res.cost +
                            resEnd.routes[0].legs[0].duration.value / 60
                          );
+              */
               var c = $('#tmplRoute').render(res);
               $('#route_table').append(c);
               
