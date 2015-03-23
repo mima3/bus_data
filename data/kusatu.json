@@ -24,7 +24,15 @@
         "http://www.city.kusatsu.shiga.jp/kurashi/kotsudorokasen/mamebus/opendata.files/M05_stop_times.xlsx" : "save_local",
         "http://www.city.kusatsu.shiga.jp/kurashi/kotsudorokasen/mamebus/opendata.files/M05_stops_cw.csv" : "save_local",
         "http://www.city.kusatsu.shiga.jp/kurashi/kotsudorokasen/mamebus/opendata.files/M05_stops_ccw.csv" : "save_local",
-        "http://www.city.kusatsu.shiga.jp/kurashi/kotsudorokasen/mamebus/opendata.files/M05_shapes.zip" : "expand_zip"
+        "http://www.city.kusatsu.shiga.jp/kurashi/kotsudorokasen/mamebus/opendata.files/M05_shapes.zip" : "expand_zip",
+        "http://www.city.kusatsu.shiga.jp/kurashi/kotsudorokasen/mamebus/opendata.files/M06_stop_times.xlsx" : "save_local",
+        "http://www.city.kusatsu.shiga.jp/kurashi/kotsudorokasen/mamebus/opendata.files/M06_stops_cw.csv" : "save_local",
+        "http://www.city.kusatsu.shiga.jp/kurashi/kotsudorokasen/mamebus/opendata.files/M06_stops_ccw.csv" : "save_local",
+        "http://www.city.kusatsu.shiga.jp/kurashi/kotsudorokasen/mamebus/opendata.files/M06_shapes.zip" : "expand_zip",
+        "http://www.city.kusatsu.shiga.jp/kurashi/kotsudorokasen/mamebus/opendata.files/M07_stop_times.xlsx" : "save_local",
+        "http://www.city.kusatsu.shiga.jp/kurashi/kotsudorokasen/mamebus/opendata.files/M07_stops_ib.csv" : "save_local",
+        "http://www.city.kusatsu.shiga.jp/kurashi/kotsudorokasen/mamebus/opendata.files/M07_stops_ob.csv" : "save_local",
+        "http://www.city.kusatsu.shiga.jp/kurashi/kotsudorokasen/mamebus/opendata.files/M07_shapes.zip" : "expand_zip"
     },
     "convert_rule" : {
         "山田小学校前": "山田小学校",
@@ -295,6 +303,141 @@
                     }
                 }
             ]
+        },
+
+        {
+            "operation_company" : "草津市",
+            "line_name" : "大宝循環線",
+            "shape" : "M06_shapes/M06.shp",
+            "srid" : 2448 ,
+            "timetables" : [
+                {
+                    "route" : "Route6R",
+                    "routeName" : "大宝循環線 右回り",
+                    "bus_stops" : "M06_stops_cw.csv",
+                    "weekday_timetable" : {
+                        "workbook" : "M06_stop_times.xlsx",
+                        "sheetname" : "M06_stop_times",
+                        "stop_offset_row" : 6,
+                        "stop_offset_col" : 3,
+                        "timetable_offset_row" : 7,
+                        "timetable_offset_col" : 3
+                    },
+                    "saturday_timetable" : {
+                        "workbook" : "M06_stop_times.xlsx",
+                        "sheetname" : "M06_stop_times",
+                        "stop_offset_row" : 6,
+                        "stop_offset_col" : 3,
+                        "timetable_offset_row" : 7,
+                        "timetable_offset_col" : 3
+                    },
+                    "holyday_timetable" : {
+                        "workbook" : "M06_stop_times.xlsx",
+                        "sheetname" : "M06_stop_times",
+                        "stop_offset_row" : 6,
+                        "stop_offset_col" : 3,
+                        "timetable_offset_row" : 7,
+                        "timetable_offset_col" : 3
+                    }
+                }
+                ,{
+                    "route" : "Route6L",
+                    "routeName" : "大宝循環線 左回り",
+                    "bus_stops" : "M06_stops_cw.csv",
+                    "weekday_timetable" : {
+                        "workbook" : "M06_stop_times.xlsx",
+                        "sheetname" : "M06_stop_times",
+                        "stop_offset_row" : 20,
+                        "stop_offset_col" : 3,
+                        "timetable_offset_row" : 21,
+                        "timetable_offset_col" : 3
+                    },
+                    "saturday_timetable" : {
+                        "workbook" : "M06_stop_times.xlsx",
+                        "sheetname" : "M06_stop_times",
+                        "stop_offset_row" : 20,
+                        "stop_offset_col" : 3,
+                        "timetable_offset_row" : 21,
+                        "timetable_offset_col" : 3
+                    },
+                    "holyday_timetable" : {
+                        "workbook" : "M06_stop_times.xlsx",
+                        "sheetname" : "M06_stop_times",
+                        "stop_offset_row" : 20,
+                        "stop_offset_col" : 3,
+                        "timetable_offset_row" : 21,
+                        "timetable_offset_col" : 3
+                    }
+                }
+            ]
+        },
+
+        {
+            "operation_company" : "草津市",
+            "line_name" : "宅屋線",
+            "shape" : "M07_shapes/M07.shp",
+            "srid" : 2448 ,
+            "timetables" : [
+                {
+                    "route" : "Route7R",
+                    "routeName" : "宅屋線 右回り",
+                    "bus_stops" : "M07_stops_ib.csv",
+                    "weekday_timetable" : {
+                        "workbook" : "M07_stop_times.xlsx",
+                        "sheetname" : "M07_stop_times",
+                        "stop_offset_row" : 6,
+                        "stop_offset_col" : 3,
+                        "timetable_offset_row" : 7,
+                        "timetable_offset_col" : 3
+                    },
+                    "saturday_timetable" : {
+                        "workbook" : "M07_stop_times.xlsx",
+                        "sheetname" : "M07_stop_times",
+                        "stop_offset_row" : 6,
+                        "stop_offset_col" : 3,
+                        "timetable_offset_row" : 7,
+                        "timetable_offset_col" : 3
+                    },
+                    "holyday_timetable" : {
+                        "workbook" : "M07_stop_times.xlsx",
+                        "sheetname" : "M07_stop_times",
+                        "stop_offset_row" : 6,
+                        "stop_offset_col" : 3,
+                        "timetable_offset_row" : 7,
+                        "timetable_offset_col" : 3
+                    }
+                }
+                ,{
+                    "route" : "Route7L",
+                    "routeName" : "宅屋線 左回り",
+                    "bus_stops" : "M07_stops_ob.csv",
+                    "weekday_timetable" : {
+                        "workbook" : "M07_stop_times.xlsx",
+                        "sheetname" : "M07_stop_times",
+                        "stop_offset_row" : 20,
+                        "stop_offset_col" : 3,
+                        "timetable_offset_row" : 21,
+                        "timetable_offset_col" : 3
+                    },
+                    "saturday_timetable" : {
+                        "workbook" : "M07_stop_times.xlsx",
+                        "sheetname" : "M07_stop_times",
+                        "stop_offset_row" : 20,
+                        "stop_offset_col" : 3,
+                        "timetable_offset_row" : 21,
+                        "timetable_offset_col" : 3
+                    },
+                    "holyday_timetable" : {
+                        "workbook" : "M07_stop_times.xlsx",
+                        "sheetname" : "M07_stop_times",
+                        "stop_offset_row" : 20,
+                        "stop_offset_col" : 3,
+                        "timetable_offset_row" : 21,
+                        "timetable_offset_col" : 3
+                    }
+                }
+            ]
         }
+
     ]
 }
